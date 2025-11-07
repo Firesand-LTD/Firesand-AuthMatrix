@@ -580,6 +580,49 @@ class TestExportPostmanCollectionsEdgeCases:
         # Should still include the endpoint based on status code
         assert len(user_collection["item"]) == 1
 
+    def test_export_with_invalid_status_type(self):
+        """Test that invalid status types are handled gracefully"""
+        self.store.spec = {
+            "base_url": "https://api.test.com",
+            "default_headers": {"Accept": "application/json"},
+            "roles": {"user": {"auth": {"type": "bearer", "token": "token"}}},
+            "endpoints": [
+                {
+                    "name": "Valid Status",
+                    "method": "GET",
+                    "path": "/valid",
+                    "expect": {"user": {"status": 200}},
+                },
+                {
+                    "name": "Invalid Status String",
+                    "method": "GET",
+                    "path": "/invalid1",
+                    "expect": {"user": {"status": "200"}},  # String instead of int
+                },
+                {
+                    "name": "Invalid Status Dict",
+                    "method": "GET",
+                    "path": "/invalid2",
+                    "expect": {"user": {"status": {"code": 200}}},  # Dict
+                },
+                {
+                    "name": "Another Valid",
+                    "method": "GET",
+                    "path": "/valid2",
+                    "expect": {"user": {"status": 201}},
+                },
+            ],
+        }
+
+        collections = self.store.export_as_postman_collections()
+        user_collection = json.loads(collections["user"])
+
+        # Should only include endpoints with valid status types
+        assert len(user_collection["item"]) == 2
+        names = [item["name"] for item in user_collection["item"]]
+        assert "Valid Status" in names
+        assert "Another Valid" in names
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
