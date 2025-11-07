@@ -1,5 +1,6 @@
 from __future__ import annotations
 import json, sys, time, multiprocessing, pickle, os
+from functools import partial
 from typing import Dict, Any, Optional, Callable, List
 import requests
 
@@ -698,9 +699,7 @@ class MultiCollectionExportDialog(QtWidgets.QDialog):
                 f"Save {role_name.capitalize()} Collection..."
             )
             save_btn.clicked.connect(
-                lambda checked, r=role_name, c=collection_json: self._save_collection(
-                    r, c
-                )
+                partial(self._save_collection, role_name, collection_json)
             )
             tab_layout.addWidget(save_btn)
 

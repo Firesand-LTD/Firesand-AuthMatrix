@@ -319,11 +319,15 @@ class SpecStore(QtCore.QObject):
                     expected_status = role_expectation.get("status")
                     # Handle both single status code and list of status codes
                     if expected_status is not None:
-                        status_list = (
-                            [expected_status]
-                            if isinstance(expected_status, int)
-                            else expected_status
-                        )
+                        # Ensure status_list is always a list of integers
+                        if isinstance(expected_status, int):
+                            status_list = [expected_status]
+                        elif isinstance(expected_status, list):
+                            status_list = expected_status
+                        else:
+                            # Skip invalid status types
+                            continue
+
                         # Include if any expected status is in 2xx range
                         if any(200 <= s < 300 for s in status_list):
                             item = {
