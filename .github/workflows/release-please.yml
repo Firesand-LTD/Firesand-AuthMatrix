@@ -22,7 +22,6 @@ jobs:
         with:
           release-type: python
           target-branch: release
-          skip-github-pull-request: true
 
   build-and-upload:
     needs: release-please
