@@ -1,13 +1,14 @@
 name: CI/CD
 
 on:
-  push:
-    branches: [ main, develop ]
   pull_request:
     branches: [ main ]
+  release:
+    types: [published]
 
 jobs:
   test:
+    if: github.event_name == 'pull_request'
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -49,7 +50,7 @@ jobs:
         fail_ci_if_error: false
 
   build-executable:
-    needs: test
+    if: github.event_name == 'release'
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
