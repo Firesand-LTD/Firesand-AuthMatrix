@@ -122,6 +122,10 @@ class TestModernStyles:
         try:
             from PySide6 import QtWidgets, QtCore
             
+            # Check if QtCore has Qt attribute (i.e., it's not a mock)
+            if not hasattr(QtCore, 'Qt'):
+                pytest.skip("PySide6 is mocked, skipping real Qt test")
+            
             # Create a simple QApplication if needed
             app = QtWidgets.QApplication.instance()
             if app is None:
@@ -141,8 +145,7 @@ class TestModernStyles:
             
         except ImportError as e:
             # PySide6 not available in test environment - skip this test
-            print(f"Skipping GUI test: {e}")
-            return  # Skip gracefully without pytest
+            pytest.skip(f"PySide6 not available: {e}")
 
 
 class TestThemeColors:
