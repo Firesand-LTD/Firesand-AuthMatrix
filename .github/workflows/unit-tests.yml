@@ -3,6 +3,8 @@ name: Execute Unit Tests
 on:
   pull_request:
     branches: [ main ]
+  release:
+    types: [published, created]
 
 permissions:
   contents: read
@@ -11,11 +13,10 @@ permissions:
 
 jobs:
   test:
-    if: github.event_name == 'pull_request'
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: ${{ github.event_name == 'release' && fromJSON('["ubuntu-latest", "windows-latest", "macos-latest"]') || fromJSON('["ubuntu-latest"]') }}
         python-version: ['3.12']
 
     steps:
