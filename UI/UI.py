@@ -1,6 +1,5 @@
 from __future__ import annotations
 import json, sys, time, multiprocessing, pickle, os
-from functools import partial
 from typing import Dict, Any, Optional, Callable, List
 import requests
 
@@ -10,7 +9,7 @@ from .views.Results import ResultsSection
 from .views.Theme import primary, secondary, background, text, border, lines, bg2
 from .views.ModernStyles import get_main_stylesheet, apply_animation_properties
 from .views.ModernStyles import get_main_stylesheet, apply_animation_properties
-from .components import LogoHeader, multiline_input, show_text, TabsComponent
+from .components import LogoHeader, multiline_input, TabsComponent
 
 
 def worker_process_function(runner_func, spec, result_queue, error_queue):
@@ -716,8 +715,8 @@ class ExportDialog(QtWidgets.QDialog):
         self.store = store
         self.setWindowTitle("Export Specification")
         self.setModal(True)
-        self.setMinimumSize(300, 180)
-        self.resize(400, 250)
+        self.setMinimumSize(300, 150)
+        self.resize(400, 200)
 
         layout = QtWidgets.QVBoxLayout(self)
 
@@ -727,18 +726,13 @@ class ExportDialog(QtWidgets.QDialog):
         # Export options
         authmatrix_btn = QtWidgets.QPushButton("Export as AuthMatrix Format")
         authmatrix_btn.setToolTip(
-            "Exports with #!AUTHMATRIX shebang and behavior logic"
+            "Exports with #!AUTHMATRIX shebang and behavior logic to a single file"
         )
         authmatrix_btn.clicked.connect(self._export_authmatrix)
         layout.addWidget(authmatrix_btn)
 
-        postman_btn = QtWidgets.QPushButton("Export as Postman Collection")
-        postman_btn.setToolTip("Exports as standard Postman collection JSON")
-        postman_btn.clicked.connect(self._export_postman)
-        layout.addWidget(postman_btn)
-
         postman_multi_btn = QtWidgets.QPushButton(
-            "Export as Multiple Postman Collections"
+            "Export as Postman Collections"
         )
         postman_multi_btn.setToolTip(
             "Exports as separate Postman collections per role with role-specific auth"
@@ -751,14 +745,29 @@ class ExportDialog(QtWidgets.QDialog):
         layout.addWidget(cancel_btn)
 
     def _export_authmatrix(self):
-        content = self.store.export_as_authmatrix()
-        show_text(self.parent(), "AuthMatrix Export", content)
-        self.accept()
+        """Export as AuthMatrix format to a file"""
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self,
+            "Export as AuthMatrix Format",
+            "authmatrix_spec.json",
+            "JSON Files (*.json);;All Files (*)",
+        )
 
-    def _export_postman(self):
-        content = self.store.export_as_postman()
-        show_text(self.parent(), "Postman Collection Export", content)
-        self.accept()
+        if not filename:
+            return
+
+        try:
+            content = self.store.export_as_authmatrix()
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(content)
+            QtWidgets.QMessageBox.information(
+                self, "Export Successful", f"AuthMatrix specification saved to:\n{filename}"
+            )
+            self.accept()
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(
+                self, "Export Error", f"Failed to save file:\n{str(e)}"
+            )
 
     def _export_postman_collections(self):
         """Export as multiple Postman collections, one per role"""
@@ -767,189 +776,40 @@ class ExportDialog(QtWidgets.QDialog):
         if not collections:
             QtWidgets.QMessageBox.information(
                 self,
-                "Export Multiple Collections",
+                "Export Postman Collections",
                 "No collections to export. Make sure you have configured role expectations for endpoints.",
             )
             return
 
-        # Show dialog to select where to save the collections
-        dialog = MultiCollectionExportDialog(collections, self)
-        if dialog.exec() == QtWidgets.QDialog.Accepted:
-            self.accept()
-        else:
-            # User cancelled, but we stay in the export dialog
-            pass
-
-
-class MultiCollectionExportDialog(QtWidgets.QDialog):
-    """Dialog for viewing and saving multiple Postman collections"""
-
-    def __init__(self, collections: Dict[str, str], parent=None):
-        super().__init__(parent)
-        self.collections = collections
-        self.setWindowTitle("Export Multiple Postman Collections")
-        self.setModal(True)
-        self.setMinimumSize(500, 400)
-        self._size_dialog_to_parent(0.7, 0.7)
-
-        layout = QtWidgets.QVBoxLayout(self)
-    
-    def _size_dialog_to_parent(self, width_ratio=0.7, height_ratio=0.7):
-        """Size dialog relative to parent window or screen"""
-        if self.parent() and isinstance(self.parent(), QtWidgets.QWidget):
-            parent_size = self.parent().size()
-            target_width = int(parent_size.width() * width_ratio)
-            target_height = int(parent_size.height() * height_ratio)
-        else:
-            screen = QtWidgets.QApplication.primaryScreen()
-            if screen:
-                available = screen.availableGeometry()
-                target_width = int(available.width() * width_ratio)
-                target_height = int(available.height() * height_ratio)
-            else:
-                return
-        
-        # Ensure we don't go below minimum size
-        current_min = self.minimumSize()
-        target_width = max(target_width, current_min.width())
-        target_height = max(target_height, current_min.height())
-        
-        self.resize(target_width, target_height)
-        
-        layout = QtWidgets.QVBoxLayout(self)
-
-        # Info label
-        info_label = QtWidgets.QLabel(
-            f"Generated {len(self.collections)} Postman collection(s), one per role.\n"
-            "Each collection contains only endpoints where the role expects success (2xx status)."
-        )
-        info_label.setWordWrap(True)
-        layout.addWidget(info_label)
-
-        # Tab widget to show each collection
-        tabs = QtWidgets.QTabWidget()
-        layout.addWidget(tabs)
-
-        # Create a tab for each collection
-        for role_name, collection_json in self.collections.items():
-            tab = QtWidgets.QWidget()
-            tab_layout = QtWidgets.QVBoxLayout(tab)
-
-            # Parse to get collection info
-            try:
-                collection_data = json.loads(collection_json)
-                item_count = len(collection_data.get("item", []))
-                has_auth = "auth" in collection_data
-
-                info = f"Collection: {collection_data['info']['name']}\n"
-                info += f"Endpoints: {item_count}\n"
-                info += f"Authentication: {'Yes' if has_auth else 'No'}"
-
-                info_widget = QtWidgets.QLabel(info)
-                tab_layout.addWidget(info_widget)
-            except:
-                pass
-
-            # Text edit to show the JSON
-            text_edit = QtWidgets.QPlainTextEdit()
-            text_edit.setPlainText(collection_json)
-            text_edit.setReadOnly(True)
-            text_edit.setFont(QtGui.QFont("Courier", 9))
-            tab_layout.addWidget(text_edit)
-
-            # Add save button for this collection
-            save_btn = QtWidgets.QPushButton(
-                f"Save {role_name.capitalize()} Collection..."
-            )
-            save_btn.clicked.connect(
-                partial(self._save_collection, role_name, collection_json)
-            )
-            tab_layout.addWidget(save_btn)
-
-            tabs.addTab(tab, role_name.capitalize())
-
-        # Buttons at bottom
-        button_layout = QtWidgets.QHBoxLayout()
-
-        save_all_btn = QtWidgets.QPushButton("Save All Collections...")
-        save_all_btn.clicked.connect(self._save_all_collections)
-        button_layout.addWidget(save_all_btn)
-
-        close_btn = QtWidgets.QPushButton("Close")
-        close_btn.clicked.connect(self.accept)
-        button_layout.addWidget(close_btn)
-
-        layout.addLayout(button_layout)
-    
-    def _size_dialog_to_parent(self, width_ratio=0.7, height_ratio=0.7):
-        """Size dialog relative to parent window or screen"""
-        if self.parent() and isinstance(self.parent(), QtWidgets.QWidget):
-            parent_size = self.parent().size()
-            target_width = int(parent_size.width() * width_ratio)
-            target_height = int(parent_size.height() * height_ratio)
-        else:
-            screen = QtWidgets.QApplication.primaryScreen()
-            if screen:
-                available = screen.availableGeometry()
-                target_width = int(available.width() * width_ratio)
-                target_height = int(available.height() * height_ratio)
-            else:
-                return
-        
-        # Ensure we don't go below minimum size
-        current_min = self.minimumSize()
-        target_width = max(target_width, current_min.width())
-        target_height = max(target_height, current_min.height())
-        
-        self.resize(target_width, target_height)
-
-    def _save_collection(self, role_name: str, collection_json: str):
-        """Save a single collection to a file"""
-        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
-            self,
-            f"Save {role_name.capitalize()} Collection",
-            f"{role_name}.postman_collection.json",
-            "JSON Files (*.json);;All Files (*)",
+        # Ask user to select directory to save all collections
+        directory = QtWidgets.QFileDialog.getExistingDirectory(
+            self, "Select Directory to Save Postman Collections"
         )
 
-        if filename:
-            try:
+        if not directory:
+            return
+
+        try:
+            saved_files = []
+            for role_name, collection_json in collections.items():
+                filename = os.path.join(
+                    directory, f"{role_name}.postman_collection.json"
+                )
                 with open(filename, "w", encoding="utf-8") as f:
                     f.write(collection_json)
-                QtWidgets.QMessageBox.information(
-                    self, "Success", f"Collection saved to {filename}"
-                )
-            except Exception as e:
-                QtWidgets.QMessageBox.critical(
-                    self, "Error", f"Failed to save collection: {str(e)}"
-                )
+                saved_files.append(filename)
 
-    def _save_all_collections(self):
-        """Save all collections to a directory"""
-        directory = QtWidgets.QFileDialog.getExistingDirectory(
-            self, "Select Directory to Save All Collections"
-        )
-
-        if directory:
-            try:
-                saved_files = []
-                for role_name, collection_json in self.collections.items():
-                    filename = os.path.join(
-                        directory, f"{role_name}.postman_collection.json"
-                    )
-                    with open(filename, "w", encoding="utf-8") as f:
-                        f.write(collection_json)
-                    saved_files.append(filename)
-
-                QtWidgets.QMessageBox.information(
-                    self,
-                    "Success",
-                    f"Saved {len(saved_files)} collection(s) to {directory}",
-                )
-            except Exception as e:
-                QtWidgets.QMessageBox.critical(
-                    self, "Error", f"Failed to save collections: {str(e)}"
-                )
+            file_list = "\n".join([f"- {os.path.basename(f)}" for f in saved_files])
+            QtWidgets.QMessageBox.information(
+                self,
+                "Export Successful",
+                f"Saved {len(saved_files)} Postman collection(s) to:\n{directory}\n\nFiles:\n{file_list}",
+            )
+            self.accept()
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(
+                self, "Export Error", f"Failed to save collections:\n{str(e)}"
+            )
 
 
 class ImportDialog(QtWidgets.QDialog):
