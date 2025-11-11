@@ -7,7 +7,8 @@ import json
 import sys
 import os
 import tempfile
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import MagicMock
+
 
 # Mock PySide6
 class MockSignal:

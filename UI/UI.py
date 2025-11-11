@@ -28,19 +28,19 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, runner: Optional[Callable[[dict], dict]] = None):
         super().__init__()
         self.setWindowTitle("Auth Matrix")
-        
+
         # Set window icon
         self._set_window_icon()
-        
+
         # Set minimum size for responsiveness
         self.setMinimumSize(700, 500)
-        
+
         # Size window to fit available screen space
         self._size_to_screen()
-        
+
         # Enable layout animations for smooth resizing
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground, False)
-        
+
         # Center the window on the screen
         self._center_window()
 
@@ -80,7 +80,7 @@ class MainWindow(QtWidgets.QMainWindow):
         central_layout = QtWidgets.QVBoxLayout(central)
         central_layout.setContentsMargins(0, 0, 0, 0)
         central_layout.setSpacing(0)
-        
+
         # Create scrollable content area
         scroll_area = QtWidgets.QScrollArea()
         scroll_area.setWidgetResizable(True)
@@ -88,7 +88,7 @@ class MainWindow(QtWidgets.QMainWindow):
         scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         central_layout.addWidget(scroll_area)
-        
+
         # Content widget inside scroll area
         content_widget = QtWidgets.QWidget()
         scroll_area.setWidget(content_widget)
@@ -100,7 +100,7 @@ class MainWindow(QtWidgets.QMainWindow):
         url_label = QtWidgets.QLabel("<b>Base URL</b>")
         url_label.setProperty("class", "title")
         vlayout.addWidget(url_label)
-        
+
         self.baseUrlEdit = QtWidgets.QLineEdit()
         self.baseUrlEdit.setPlaceholderText("http://localhost:3000")
         self.baseUrlEdit.textChanged.connect(self.store.set_base_url)
@@ -144,7 +144,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # Handle responsive layout adjustments on resize
             self._handle_responsive_layout()
         return super().eventFilter(obj, event)
-    
+
     def _handle_responsive_layout(self):
         """Adjust layout based on window size for responsiveness."""
         # Responsive adjustments are primarily handled through:
@@ -160,17 +160,17 @@ class MainWindow(QtWidgets.QMainWindow):
         if screen is not None:
             # Get available screen geometry (excludes taskbars, etc.)
             available = screen.availableGeometry()
-            
+
             # Use 80% of available screen size, with reasonable max dimensions
             target_width = min(int(available.width() * 0.8), 1400)
             target_height = min(int(available.height() * 0.85), 900)
-            
+
             # Ensure we don't go below minimum size
             target_width = max(target_width, 700)
             target_height = max(target_height, 500)
-            
+
             self.resize(target_width, target_height)
-    
+
     def _center_window(self):
         """Center the window on the primary screen"""
         # Get the primary screen
@@ -191,26 +191,26 @@ class MainWindow(QtWidgets.QMainWindow):
         """Set the window icon from assets folder"""
         import os
         from pathlib import Path
-        
+
         # Try to find the icon file
         # Prefer .ico on Windows for better multi-size support
-        icon_extensions = ['.ico', '.png']
+        icon_extensions = [".ico", ".png"]
         icon_path = None
-        
+
         for ext in icon_extensions:
             # When running from source
             candidate_path = Path(__file__).parent / "assets" / f"favicon{ext}"
             if candidate_path.exists():
                 icon_path = candidate_path
                 break
-            
+
             # When running from PyInstaller bundle
-            if hasattr(sys, '_MEIPASS'):
+            if hasattr(sys, "_MEIPASS"):
                 candidate_path = Path(sys._MEIPASS) / "UI" / "assets" / f"favicon{ext}"
                 if candidate_path.exists():
                     icon_path = candidate_path
                     break
-        
+
         if icon_path:
             icon = QtGui.QIcon(str(icon_path))
             # Set window icon
@@ -381,7 +381,7 @@ class PostmanConfigDialog(QtWidgets.QDialog):
         self._size_dialog_to_parent(0.7, 0.7)
 
         layout = QtWidgets.QVBoxLayout(self)
-    
+
     def _size_dialog_to_parent(self, width_ratio=0.7, height_ratio=0.7):
         """Size dialog relative to parent window or screen"""
         if self.parent() and isinstance(self.parent(), QtWidgets.QWidget):
@@ -396,14 +396,14 @@ class PostmanConfigDialog(QtWidgets.QDialog):
                 target_height = int(available.height() * height_ratio)
             else:
                 return
-        
+
         # Ensure we don't go below minimum size
         current_min = self.minimumSize()
         target_width = max(target_width, current_min.width())
         target_height = max(target_height, current_min.height())
-        
+
         self.resize(target_width, target_height)
-        
+
         layout = QtWidgets.QVBoxLayout(self)
 
         # Info label
@@ -471,7 +471,7 @@ class PostmanConfigDialog(QtWidgets.QDialog):
         button_layout.addWidget(ok_btn)
 
         layout.addLayout(button_layout)
-    
+
     def _size_dialog_to_parent(self, width_ratio=0.7, height_ratio=0.7):
         """Size dialog relative to parent window or screen"""
         if self.parent() and isinstance(self.parent(), QtWidgets.QWidget):
@@ -486,12 +486,12 @@ class PostmanConfigDialog(QtWidgets.QDialog):
                 target_height = int(available.height() * height_ratio)
             else:
                 return
-        
+
         # Ensure we don't go below minimum size
         current_min = self.minimumSize()
         target_width = max(target_width, current_min.width())
         target_height = max(target_height, current_min.height())
-        
+
         self.resize(target_width, target_height)
 
     def _refresh_roles_list(self):
@@ -731,9 +731,7 @@ class ExportDialog(QtWidgets.QDialog):
         authmatrix_btn.clicked.connect(self._export_authmatrix)
         layout.addWidget(authmatrix_btn)
 
-        postman_multi_btn = QtWidgets.QPushButton(
-            "Export as Postman Collections"
-        )
+        postman_multi_btn = QtWidgets.QPushButton("Export as Postman Collections")
         postman_multi_btn.setToolTip(
             "Exports as separate Postman collections per role with role-specific auth"
         )
@@ -761,7 +759,9 @@ class ExportDialog(QtWidgets.QDialog):
             with open(filename, "w", encoding="utf-8") as f:
                 f.write(content)
             QtWidgets.QMessageBox.information(
-                self, "Export Successful", f"AuthMatrix specification saved to:\n{filename}"
+                self,
+                "Export Successful",
+                f"AuthMatrix specification saved to:\n{filename}",
             )
             self.accept()
         except Exception as e:
@@ -896,7 +896,7 @@ class ImportDialog(QtWidgets.QDialog):
 
         # Store for multi-collection import
         self.imported_collections = {}
-    
+
     def _size_dialog_to_parent(self, width_ratio=0.7, height_ratio=0.7):
         """Size dialog relative to parent window or screen"""
         if self.parent() and isinstance(self.parent(), QtWidgets.QWidget):
@@ -911,12 +911,12 @@ class ImportDialog(QtWidgets.QDialog):
                 target_height = int(available.height() * height_ratio)
             else:
                 return
-        
+
         # Ensure we don't go below minimum size
         current_min = self.minimumSize()
         target_width = max(target_width, current_min.width())
         target_height = max(target_height, current_min.height())
-        
+
         self.resize(target_width, target_height)
 
     def _create_authmatrix_import_page(self):
