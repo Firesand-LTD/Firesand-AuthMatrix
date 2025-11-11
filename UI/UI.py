@@ -9,6 +9,7 @@ from .views.SpecStore import SpecStore
 from .views.Results import ResultsSection
 from .views.Theme import primary, secondary, background, text, border
 from .views.ModernStyles import get_main_stylesheet, apply_animation_properties
+from .views.ModernStyles import get_main_stylesheet, apply_animation_properties
 from .components import LogoHeader, multiline_input, show_text, TabsComponent
 
 
@@ -33,6 +34,11 @@ class MainWindow(QtWidgets.QMainWindow):
         
         # Enable layout animations for smooth resizing
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground, False)
+        self.setMinimumSize(800, 600)  # Set minimum size for responsiveness
+        self.resize(1024, 768)  # Better default size for modern displays
+        
+        # Enable layout animations for smooth resizing
+        self.setAttribute(QtCore.Qt.WA_TranslucentBackground, False)
         
         # Center the window on the screen
         self._center_window()
@@ -46,6 +52,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.result_queue: Optional[multiprocessing.Queue] = None
         self.error_queue: Optional[multiprocessing.Queue] = None
         self.poll_timer: Optional[QtCore.QTimer] = None
+
+        # Apply modern stylesheet
+        self.setStyleSheet(get_main_stylesheet())
 
         # Apply modern stylesheet
         self.setStyleSheet(get_main_stylesheet())
@@ -94,7 +103,13 @@ class MainWindow(QtWidgets.QMainWindow):
         results_label.setProperty("class", "title")
         vlayout.addWidget(results_label)
         
+        results_label = QtWidgets.QLabel("<b>Results</b>")
+        results_label.setProperty("class", "title")
+        vlayout.addWidget(results_label)
+        
         self.resultsView = ResultsSection()
+        apply_animation_properties(self.resultsView)
+        vlayout.addWidget(self.resultsView, 1)  # Give results more space
         apply_animation_properties(self.resultsView)
         vlayout.addWidget(self.resultsView, 1)  # Give results more space
 
@@ -109,6 +124,36 @@ class MainWindow(QtWidgets.QMainWindow):
         # Initialize UI with current spec values
         self._on_spec_changed()
 
+        # statusbar with better styling
+        status_bar = self.statusBar()
+        status_bar.showMessage("Ready")
+        status_bar.setSizeGripEnabled(True)  # Enable resize grip
+
+        # Install event filter for responsive behavior
+        self.installEventFilter(self)
+
+    def eventFilter(self, obj, event):
+        """Event filter for handling responsive UI behavior."""
+        if obj == self and event.type() == QtCore.QEvent.Resize:
+            # Handle responsive layout adjustments on resize
+            self._handle_responsive_layout()
+        return super().eventFilter(obj, event)
+    
+    def _handle_responsive_layout(self):
+        """Adjust layout based on window size for responsiveness."""
+        width = self.width()
+        height = self.height()
+        
+        # Adjust font sizes for very small screens
+        if width < 900:
+            # Compact mode for smaller screens
+            font_size = "12px"
+        else:
+            # Normal mode
+            font_size = "13px"
+        
+        # Note: Full responsive styling is handled by the stylesheet
+        # This method can be extended for dynamic layout changes
         # statusbar with better styling
         status_bar = self.statusBar()
         status_bar.showMessage("Ready")
