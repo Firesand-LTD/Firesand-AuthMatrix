@@ -29,8 +29,12 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, runner: Optional[Callable[[dict], dict]] = None):
         super().__init__()
         self.setWindowTitle("Auth Matrix")
-        self.setMinimumSize(800, 600)  # Set minimum size for responsiveness
-        self.resize(1024, 768)  # Better default size for modern displays
+        
+        # Set minimum size for responsiveness
+        self.setMinimumSize(700, 500)
+        
+        # Size window to fit available screen space
+        self._size_to_screen()
         
         # Enable layout animations for smooth resizing
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground, False)
@@ -65,10 +69,25 @@ class MainWindow(QtWidgets.QMainWindow):
         # Theme: use static colors from Theme.py
         self.themeColor = QtGui.QColor(primary)
 
-        # Content as tabs
+        # Content as tabs - use scroll area for small screens
         central = QtWidgets.QWidget()
         self.setCentralWidget(central)
-        vlayout = QtWidgets.QVBoxLayout(central)
+        central_layout = QtWidgets.QVBoxLayout(central)
+        central_layout.setContentsMargins(0, 0, 0, 0)
+        central_layout.setSpacing(0)
+        
+        # Create scrollable content area
+        scroll_area = QtWidgets.QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setFrameShape(QtWidgets.QFrame.NoFrame)
+        scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+        scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+        central_layout.addWidget(scroll_area)
+        
+        # Content widget inside scroll area
+        content_widget = QtWidgets.QWidget()
+        scroll_area.setWidget(content_widget)
+        vlayout = QtWidgets.QVBoxLayout(content_widget)
         vlayout.setContentsMargins(16, 16, 16, 16)  # Modern spacing
         vlayout.setSpacing(12)  # Consistent spacing
 
@@ -85,8 +104,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Tabs for Headers, Endpoints, Tokens
         self.tabs = TabsComponent(self.store)
+        self.tabs.setMinimumHeight(300)  # Ensure tabs have reasonable minimum height
         apply_animation_properties(self.tabs)
-        vlayout.addWidget(self.tabs, 1)  # Give tabs more space
+        vlayout.addWidget(self.tabs, 2)  # Give tabs more relative space
 
         # Convenience properties to access sections
         self.headers = self.tabs.get_headers()
@@ -98,15 +118,10 @@ class MainWindow(QtWidgets.QMainWindow):
         results_label.setProperty("class", "title")
         vlayout.addWidget(results_label)
         
-        results_label = QtWidgets.QLabel("<b>Results</b>")
-        results_label.setProperty("class", "title")
-        vlayout.addWidget(results_label)
-        
         self.resultsView = ResultsSection()
+        self.resultsView.setMinimumHeight(200)  # Ensure results have reasonable minimum height
         apply_animation_properties(self.resultsView)
-        vlayout.addWidget(self.resultsView, 1)  # Give results more space
-        apply_animation_properties(self.resultsView)
-        vlayout.addWidget(self.resultsView, 1)  # Give results more space
+        vlayout.addWidget(self.resultsView, 1)  # Give results less relative space than tabs
 
         # wire header actions
         self.header.importRequested.connect(self._import_spec)
@@ -136,57 +151,37 @@ class MainWindow(QtWidgets.QMainWindow):
     
     def _handle_responsive_layout(self):
         """Adjust layout based on window size for responsiveness."""
-        width = self.width()
-        height = self.height()
-        
-        # Adjust font sizes for very small screens
-        if width < 900:
-            # Compact mode for smaller screens
-            font_size = "12px"
-        else:
-            # Normal mode
-            font_size = "13px"
-        
-        # Note: Full responsive styling is handled by the stylesheet
-        # This method can be extended for dynamic layout changes
-        # statusbar with better styling
-        status_bar = self.statusBar()
-        status_bar.showMessage("Ready")
-        status_bar.setSizeGripEnabled(True)  # Enable resize grip
+        # Responsive adjustments are primarily handled through:
+        # 1. Scroll areas for overflow content
+        # 2. Stretch factors in layouts
+        # 3. Minimum size constraints on key widgets
+        # 4. CSS-based responsive styling in ModernStyles.py
+        pass
 
-        # Install event filter for responsive behavior
-        self.installEventFilter(self)
-
-    def eventFilter(self, obj, event):
-        """Event filter for handling responsive UI behavior."""
-        if obj == self and event.type() == QtCore.QEvent.Resize:
-            # Handle responsive layout adjustments on resize
-            self._handle_responsive_layout()
-        return super().eventFilter(obj, event)
+    def _size_to_screen(self):
+        """Size the window to fit available screen space"""
+        screen = QtWidgets.QApplication.primaryScreen()
+        if screen is not None:
+            # Get available screen geometry (excludes taskbars, etc.)
+            available = screen.availableGeometry()
+            
+            # Use 80% of available screen size, with reasonable max dimensions
+            target_width = min(int(available.width() * 0.8), 1400)
+            target_height = min(int(available.height() * 0.85), 900)
+            
+            # Ensure we don't go below minimum size
+            target_width = max(target_width, 700)
+            target_height = max(target_height, 500)
+            
+            self.resize(target_width, target_height)
     
-    def _handle_responsive_layout(self):
-        """Adjust layout based on window size for responsiveness."""
-        width = self.width()
-        height = self.height()
-        
-        # Adjust font sizes for very small screens
-        if width < 900:
-            # Compact mode for smaller screens
-            font_size = "12px"
-        else:
-            # Normal mode
-            font_size = "13px"
-        
-        # Note: Full responsive styling is handled by the stylesheet
-        # This method can be extended for dynamic layout changes
-
     def _center_window(self):
         """Center the window on the primary screen"""
         # Get the primary screen
         screen = QtWidgets.QApplication.primaryScreen()
         if screen is not None:
             # Get screen geometry
-            screen_geometry = screen.geometry()
+            screen_geometry = screen.availableGeometry()
 
             # Calculate center position
             window_geometry = self.frameGeometry()
@@ -372,8 +367,33 @@ class PostmanConfigDialog(QtWidgets.QDialog):
         self.store = store
         self.setWindowTitle("Configure Postman Collection")
         self.setModal(True)
-        self.resize(640, 480)
+        self.setMinimumSize(500, 400)
+        self._size_dialog_to_parent(0.7, 0.7)
 
+        layout = QtWidgets.QVBoxLayout(self)
+    
+    def _size_dialog_to_parent(self, width_ratio=0.7, height_ratio=0.7):
+        """Size dialog relative to parent window or screen"""
+        if self.parent() and isinstance(self.parent(), QtWidgets.QWidget):
+            parent_size = self.parent().size()
+            target_width = int(parent_size.width() * width_ratio)
+            target_height = int(parent_size.height() * height_ratio)
+        else:
+            screen = QtWidgets.QApplication.primaryScreen()
+            if screen:
+                available = screen.availableGeometry()
+                target_width = int(available.width() * width_ratio)
+                target_height = int(available.height() * height_ratio)
+            else:
+                return
+        
+        # Ensure we don't go below minimum size
+        current_min = self.minimumSize()
+        target_width = max(target_width, current_min.width())
+        target_height = max(target_height, current_min.height())
+        
+        self.resize(target_width, target_height)
+        
         layout = QtWidgets.QVBoxLayout(self)
 
         # Info label
@@ -441,6 +461,28 @@ class PostmanConfigDialog(QtWidgets.QDialog):
         button_layout.addWidget(ok_btn)
 
         layout.addLayout(button_layout)
+    
+    def _size_dialog_to_parent(self, width_ratio=0.7, height_ratio=0.7):
+        """Size dialog relative to parent window or screen"""
+        if self.parent() and isinstance(self.parent(), QtWidgets.QWidget):
+            parent_size = self.parent().size()
+            target_width = int(parent_size.width() * width_ratio)
+            target_height = int(parent_size.height() * height_ratio)
+        else:
+            screen = QtWidgets.QApplication.primaryScreen()
+            if screen:
+                available = screen.availableGeometry()
+                target_width = int(available.width() * width_ratio)
+                target_height = int(available.height() * height_ratio)
+            else:
+                return
+        
+        # Ensure we don't go below minimum size
+        current_min = self.minimumSize()
+        target_width = max(target_width, current_min.width())
+        target_height = max(target_height, current_min.height())
+        
+        self.resize(target_width, target_height)
 
     def _refresh_roles_list(self):
         self.roles_list.clear()
@@ -663,7 +705,8 @@ class ExportDialog(QtWidgets.QDialog):
         self.store = store
         self.setWindowTitle("Export Specification")
         self.setModal(True)
-        self.resize(320, 200)
+        self.setMinimumSize(300, 180)
+        self.resize(400, 250)
 
         layout = QtWidgets.QVBoxLayout(self)
 
@@ -735,13 +778,38 @@ class MultiCollectionExportDialog(QtWidgets.QDialog):
         self.collections = collections
         self.setWindowTitle("Export Multiple Postman Collections")
         self.setModal(True)
-        self.resize(600, 500)
+        self.setMinimumSize(500, 400)
+        self._size_dialog_to_parent(0.7, 0.7)
 
+        layout = QtWidgets.QVBoxLayout(self)
+    
+    def _size_dialog_to_parent(self, width_ratio=0.7, height_ratio=0.7):
+        """Size dialog relative to parent window or screen"""
+        if self.parent() and isinstance(self.parent(), QtWidgets.QWidget):
+            parent_size = self.parent().size()
+            target_width = int(parent_size.width() * width_ratio)
+            target_height = int(parent_size.height() * height_ratio)
+        else:
+            screen = QtWidgets.QApplication.primaryScreen()
+            if screen:
+                available = screen.availableGeometry()
+                target_width = int(available.width() * width_ratio)
+                target_height = int(available.height() * height_ratio)
+            else:
+                return
+        
+        # Ensure we don't go below minimum size
+        current_min = self.minimumSize()
+        target_width = max(target_width, current_min.width())
+        target_height = max(target_height, current_min.height())
+        
+        self.resize(target_width, target_height)
+        
         layout = QtWidgets.QVBoxLayout(self)
 
         # Info label
         info_label = QtWidgets.QLabel(
-            f"Generated {len(collections)} Postman collection(s), one per role.\n"
+            f"Generated {len(self.collections)} Postman collection(s), one per role.\n"
             "Each collection contains only endpoints where the role expects success (2xx status)."
         )
         info_label.setWordWrap(True)
@@ -752,7 +820,7 @@ class MultiCollectionExportDialog(QtWidgets.QDialog):
         layout.addWidget(tabs)
 
         # Create a tab for each collection
-        for role_name, collection_json in collections.items():
+        for role_name, collection_json in self.collections.items():
             tab = QtWidgets.QWidget()
             tab_layout = QtWidgets.QVBoxLayout(tab)
 
@@ -801,6 +869,28 @@ class MultiCollectionExportDialog(QtWidgets.QDialog):
         button_layout.addWidget(close_btn)
 
         layout.addLayout(button_layout)
+    
+    def _size_dialog_to_parent(self, width_ratio=0.7, height_ratio=0.7):
+        """Size dialog relative to parent window or screen"""
+        if self.parent() and isinstance(self.parent(), QtWidgets.QWidget):
+            parent_size = self.parent().size()
+            target_width = int(parent_size.width() * width_ratio)
+            target_height = int(parent_size.height() * height_ratio)
+        else:
+            screen = QtWidgets.QApplication.primaryScreen()
+            if screen:
+                available = screen.availableGeometry()
+                target_width = int(available.width() * width_ratio)
+                target_height = int(available.height() * height_ratio)
+            else:
+                return
+        
+        # Ensure we don't go below minimum size
+        current_min = self.minimumSize()
+        target_width = max(target_width, current_min.width())
+        target_height = max(target_height, current_min.height())
+        
+        self.resize(target_width, target_height)
 
     def _save_collection(self, role_name: str, collection_json: str):
         """Save a single collection to a file"""
@@ -859,7 +949,8 @@ class ImportDialog(QtWidgets.QDialog):
         self.store = store
         self.setWindowTitle("Import API Specification")
         self.setModal(True)
-        self.resize(640, 480)
+        self.setMinimumSize(500, 400)
+        self._size_dialog_to_parent(0.7, 0.7)
 
         layout = QtWidgets.QVBoxLayout(self)
 
@@ -934,6 +1025,28 @@ class ImportDialog(QtWidgets.QDialog):
 
         # Store for multi-collection import
         self.imported_collections = {}
+    
+    def _size_dialog_to_parent(self, width_ratio=0.7, height_ratio=0.7):
+        """Size dialog relative to parent window or screen"""
+        if self.parent() and isinstance(self.parent(), QtWidgets.QWidget):
+            parent_size = self.parent().size()
+            target_width = int(parent_size.width() * width_ratio)
+            target_height = int(parent_size.height() * height_ratio)
+        else:
+            screen = QtWidgets.QApplication.primaryScreen()
+            if screen:
+                available = screen.availableGeometry()
+                target_width = int(available.width() * width_ratio)
+                target_height = int(available.height() * height_ratio)
+            else:
+                return
+        
+        # Ensure we don't go below minimum size
+        current_min = self.minimumSize()
+        target_width = max(target_width, current_min.width())
+        target_height = max(target_height, current_min.height())
+        
+        self.resize(target_width, target_height)
 
     def _create_authmatrix_import_page(self):
         """Create the AuthMatrix import page"""
@@ -1463,8 +1576,9 @@ class RoleAuthConfigDialog(QtWidgets.QDialog):
         super().__init__(parent)
         self.setWindowTitle("Configure Role and Authentication")
         self.setModal(True)
-        self.resize(400, 240)
-
+        self.setMinimumSize(380, 220)
+        self.resize(450, 280)
+    
         layout = QtWidgets.QVBoxLayout(self)
 
         # Info label
