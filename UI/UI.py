@@ -30,6 +30,9 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__()
         self.setWindowTitle("Auth Matrix")
         
+        # Set window icon
+        self._set_window_icon()
+        
         # Set minimum size for responsiveness
         self.setMinimumSize(700, 500)
         
@@ -197,18 +200,32 @@ class MainWindow(QtWidgets.QMainWindow):
         from pathlib import Path
         
         # Try to find the icon file
-        # When running from source
-        icon_path = Path(__file__).parent / "assets" / "favicon.png"
+        # Prefer .ico on Windows for better multi-size support
+        icon_extensions = ['.ico', '.png']
+        icon_path = None
         
-        # When running from PyInstaller bundle
-        if not icon_path.exists() and hasattr(sys, '_MEIPASS'):
-            icon_path = Path(sys._MEIPASS) / "UI" / "assets" / "favicon.png"
+        for ext in icon_extensions:
+            # When running from source
+            candidate_path = Path(__file__).parent / "assets" / f"favicon{ext}"
+            if candidate_path.exists():
+                icon_path = candidate_path
+                break
+            
+            # When running from PyInstaller bundle
+            if hasattr(sys, '_MEIPASS'):
+                candidate_path = Path(sys._MEIPASS) / "UI" / "assets" / f"favicon{ext}"
+                if candidate_path.exists():
+                    icon_path = candidate_path
+                    break
         
-        if icon_path.exists():
+        if icon_path:
             icon = QtGui.QIcon(str(icon_path))
+            # Set window icon
             self.setWindowIcon(icon)
             # Also set the application icon for taskbar
-            QtWidgets.QApplication.instance().setWindowIcon(icon)
+            app = QtWidgets.QApplication.instance()
+            if app:
+                app.setWindowIcon(icon)
 
     def _on_spec_changed(self):
         """Update UI elements when the spec changes"""
@@ -1578,7 +1595,7 @@ class RoleAuthConfigDialog(QtWidgets.QDialog):
         self.setModal(True)
         self.setMinimumSize(380, 220)
         self.resize(450, 280)
-    
+
         layout = QtWidgets.QVBoxLayout(self)
 
         # Info label
