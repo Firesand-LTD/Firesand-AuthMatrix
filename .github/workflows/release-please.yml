@@ -11,6 +11,7 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    name: Release Please
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
@@ -22,6 +23,7 @@ jobs:
           target-branch: release
 
   build-and-upload:
+    name: Build and Upload
     needs: release-please
     if: ${{ needs.release-please.outputs.release_created }}
     runs-on: ${{ matrix.os }}
