@@ -21,15 +21,15 @@ def streaming_worker_function(spec, result_queue, error_queue, stop_event):
             if stop_event.is_set():
                 result_queue.put(("STOPPED", None, None, None))
                 return
-            
+
             name = ep.get("name") or ep["path"]
-            
+
             for role, roleSpec in spec["roles"].items():
                 # Check if we should stop
                 if stop_event.is_set():
                     result_queue.put(("STOPPED", None, None, None))
                     return
-                
+
                 expect = ep.get("expect", {}).get(role)
                 if not expect:
                     result_queue.put(("RESULT", name, role, {"status": "SKIP"}))
@@ -62,7 +62,7 @@ def streaming_worker_function(spec, result_queue, error_queue, stop_event):
                     result_queue.put(("RESULT", name, role, {"status": "FAIL", "http": r.status_code}))
                 else:
                     result_queue.put(("RESULT", name, role, {"status": "PASS", "http": r.status_code, "latency_ms": latency}))
-        
+
         # Signal completion
         result_queue.put(("DONE", None, None, None))
     except Exception as e:
@@ -85,19 +85,19 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, runner: Optional[Callable[[dict], dict]] = None):
         super().__init__()
         self.setWindowTitle("Auth Matrix")
-        
+
         # Set window icon
         self._set_window_icon()
-        
+
         # Set minimum size for responsiveness
         self.setMinimumSize(700, 500)
-        
+
         # Size window to fit available screen space
         self._size_to_screen()
-        
+
         # Enable layout animations for smooth resizing
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground, False)
-        
+
         # Center the window on the screen
         self._center_window()
 
@@ -111,7 +111,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.error_queue: Optional[multiprocessing.Queue] = None
         self.stop_event: Optional[multiprocessing.Event] = None
         self.poll_timer: Optional[QtCore.QTimer] = None
-        
+
         # Track streaming results
         self.streaming_results: Dict[str, Dict[str, Dict[str, Any]]] = {}
 
@@ -141,7 +141,7 @@ class MainWindow(QtWidgets.QMainWindow):
         central_layout = QtWidgets.QVBoxLayout(central)
         central_layout.setContentsMargins(0, 0, 0, 0)
         central_layout.setSpacing(0)
-        
+
         # Create scrollable content area
         scroll_area = QtWidgets.QScrollArea()
         scroll_area.setWidgetResizable(True)
@@ -149,7 +149,7 @@ class MainWindow(QtWidgets.QMainWindow):
         scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         central_layout.addWidget(scroll_area)
-        
+
         # Content widget inside scroll area
         content_widget = QtWidgets.QWidget()
         scroll_area.setWidget(content_widget)
@@ -161,7 +161,7 @@ class MainWindow(QtWidgets.QMainWindow):
         url_label = QtWidgets.QLabel("<b>Base URL</b>")
         url_label.setProperty("class", "title")
         vlayout.addWidget(url_label)
-        
+
         self.baseUrlEdit = QtWidgets.QLineEdit()
         self.baseUrlEdit.setPlaceholderText("http://localhost:3000")
         self.baseUrlEdit.textChanged.connect(self.store.set_base_url)
@@ -206,7 +206,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # Handle responsive layout adjustments on resize
             self._handle_responsive_layout()
         return super().eventFilter(obj, event)
-    
+
     def _handle_responsive_layout(self):
         """Adjust layout based on window size for responsiveness."""
         # Responsive adjustments are primarily handled through:
@@ -222,17 +222,17 @@ class MainWindow(QtWidgets.QMainWindow):
         if screen is not None:
             # Get available screen geometry (excludes taskbars, etc.)
             available = screen.availableGeometry()
-            
+
             # Use 80% of available screen size, with reasonable max dimensions
             target_width = min(int(available.width() * 0.8), 1400)
             target_height = min(int(available.height() * 0.85), 900)
-            
+
             # Ensure we don't go below minimum size
             target_width = max(target_width, 700)
             target_height = max(target_height, 500)
-            
+
             self.resize(target_width, target_height)
-    
+
     def _center_window(self):
         """Center the window on the primary screen"""
         # Get the primary screen
@@ -253,26 +253,26 @@ class MainWindow(QtWidgets.QMainWindow):
         """Set the window icon from assets folder"""
         import os
         from pathlib import Path
-        
+
         # Try to find the icon file
         # Prefer .ico on Windows for better multi-size support
         icon_extensions = ['.ico', '.png']
         icon_path = None
-        
+
         for ext in icon_extensions:
             # When running from source
             candidate_path = Path(__file__).parent / "assets" / f"favicon{ext}"
             if candidate_path.exists():
                 icon_path = candidate_path
                 break
-            
+
             # When running from PyInstaller bundle
             if hasattr(sys, '_MEIPASS'):
                 candidate_path = Path(sys._MEIPASS) / "UI" / "assets" / f"favicon{ext}"
                 if candidate_path.exists():
                     icon_path = candidate_path
                     break
-        
+
         if icon_path:
             icon = QtGui.QIcon(str(icon_path))
             # Set window icon
@@ -358,13 +358,13 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self.store.spec.get("base_url"):
             QtWidgets.QMessageBox.warning(self, "Run", "Base URL is required")
             return
-        
+
         url = self.store.spec["base_url"].rstrip("/")
         self.statusBar().showMessage("Running tests on: " + url)
-        
+
         # Set button to running state
         self.header.set_running_state(True)
-        
+
         # Initialize streaming results with empty structure
         self.streaming_results = {}
         for ep in self.store.spec.get("endpoints", []):
@@ -372,72 +372,72 @@ class MainWindow(QtWidgets.QMainWindow):
             self.streaming_results[name] = {}
             for role in self.store.spec.get("roles", {}).keys():
                 self.streaming_results[name][role] = {"status": "⏳"}  # Pending
-        
+
         # Initialize results table with empty/pending state
         self.resultsView.render(self.streaming_results)
-        
+
         # Switch to Results tab
         self.tabs.setCurrentIndex(3)  # Results tab is typically index 3
-        
+
         # Create multiprocessing resources
         self.result_queue = multiprocessing.Queue()
         self.error_queue = multiprocessing.Queue()
         self.stop_event = multiprocessing.Event()
-        
+
         # Create and start worker process
         self.process = multiprocessing.Process(
             target=streaming_worker_function,
             args=(self.store.spec, self.result_queue, self.error_queue, self.stop_event),
         )
         self.process.start()
-        
+
         # Set up timer to poll for streaming results
         self.poll_timer = QtCore.QTimer()
         self.poll_timer.timeout.connect(self._poll_streaming_results)
         self.poll_timer.start(100)  # Poll every 100ms
-    
+
     def _stop_run(self):
         """Stop the currently running tests"""
         if self.stop_event:
             self.stop_event.set()
         self.statusBar().showMessage("Stopping tests...", 2000)
-    
+
     def _poll_streaming_results(self):
         """Poll for streaming results from the worker process"""
         if not self.process:
             return
-        
+
         # Process all available results in the queue
         while not self.result_queue.empty():
             try:
                 msg_type, endpoint_name, role, result = self.result_queue.get_nowait()
-                
+
                 if msg_type == "RESULT":
                     # Update the specific result
                     if endpoint_name in self.streaming_results:
                         self.streaming_results[endpoint_name][role] = result
                         self.resultsView.update_result(endpoint_name, role, result)
-                
+
                 elif msg_type == "DONE":
                     # All tests completed
                     self._on_streaming_finished()
                     return
-                
+
                 elif msg_type == "STOPPED":
                     # Tests were stopped
                     self._on_streaming_stopped()
                     return
-                    
+
             except Exception as e:
                 print(f"Error processing result: {e}")
                 continue
-        
+
         # Check for errors
         if not self.error_queue.empty():
             error_msg = self.error_queue.get()
             self._on_streaming_failed(error_msg)
             return
-        
+
         # Check if process has died unexpectedly
         if not self.process.is_alive():
             # Process finished, but we didn't get DONE or STOPPED message
@@ -450,41 +450,41 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.resultsView.update_result(endpoint_name, role, result)
                 except:
                     break
-            
+
             self._on_streaming_finished()
-    
+
     def _on_streaming_finished(self):
         """Handle completion of streaming tests"""
         self._cleanup_streaming()
         self.header.set_running_state(False)
         self.results = self.streaming_results
         self.statusBar().showMessage("Tests completed", 3000)
-    
+
     def _on_streaming_stopped(self):
         """Handle user-requested stop"""
         self._cleanup_streaming()
         self.header.set_running_state(False)
         self.statusBar().showMessage("Tests stopped by user", 3000)
-    
+
     def _on_streaming_failed(self, msg: str):
         """Handle streaming test failure"""
         self._cleanup_streaming()
         self.header.set_running_state(False)
         QtWidgets.QMessageBox.critical(self, "Test Failed", msg)
         self.statusBar().clearMessage()
-    
+
     def _cleanup_streaming(self):
         """Clean up streaming resources"""
         if self.poll_timer:
             self.poll_timer.stop()
             self.poll_timer = None
-        
+
         if self.process and self.process.is_alive():
             self.process.join(timeout=1.0)
             if self.process.is_alive():
                 self.process.terminate()
                 self.process.join()
-        
+
         self.process = None
         self.result_queue = None
         self.error_queue = None
@@ -495,14 +495,14 @@ class MainWindow(QtWidgets.QMainWindow):
         # Stop any running tests
         if self.stop_event:
             self.stop_event.set()
-        
+
         # Clean up streaming resources
         self._cleanup_streaming()
-        
+
         # Reset header button state
         if hasattr(self, 'header'):
             self.header.set_running_state(False)
-        
+
         super().closeEvent(event)
 
 
@@ -518,7 +518,7 @@ class PostmanConfigDialog(QtWidgets.QDialog):
         self._size_dialog_to_parent(0.7, 0.7)
 
         layout = QtWidgets.QVBoxLayout(self)
-    
+
     def _size_dialog_to_parent(self, width_ratio=0.7, height_ratio=0.7):
         """Size dialog relative to parent window or screen"""
         if self.parent() and isinstance(self.parent(), QtWidgets.QWidget):
@@ -533,14 +533,14 @@ class PostmanConfigDialog(QtWidgets.QDialog):
                 target_height = int(available.height() * height_ratio)
             else:
                 return
-        
+
         # Ensure we don't go below minimum size
         current_min = self.minimumSize()
         target_width = max(target_width, current_min.width())
         target_height = max(target_height, current_min.height())
-        
+
         self.resize(target_width, target_height)
-        
+
         layout = QtWidgets.QVBoxLayout(self)
 
         # Info label
@@ -608,7 +608,7 @@ class PostmanConfigDialog(QtWidgets.QDialog):
         button_layout.addWidget(ok_btn)
 
         layout.addLayout(button_layout)
-    
+
     def _size_dialog_to_parent(self, width_ratio=0.7, height_ratio=0.7):
         """Size dialog relative to parent window or screen"""
         if self.parent() and isinstance(self.parent(), QtWidgets.QWidget):
@@ -623,12 +623,12 @@ class PostmanConfigDialog(QtWidgets.QDialog):
                 target_height = int(available.height() * height_ratio)
             else:
                 return
-        
+
         # Ensure we don't go below minimum size
         current_min = self.minimumSize()
         target_width = max(target_width, current_min.width())
         target_height = max(target_height, current_min.height())
-        
+
         self.resize(target_width, target_height)
 
     def _refresh_roles_list(self):
@@ -929,7 +929,7 @@ class MultiCollectionExportDialog(QtWidgets.QDialog):
         self._size_dialog_to_parent(0.7, 0.7)
 
         layout = QtWidgets.QVBoxLayout(self)
-    
+
     def _size_dialog_to_parent(self, width_ratio=0.7, height_ratio=0.7):
         """Size dialog relative to parent window or screen"""
         if self.parent() and isinstance(self.parent(), QtWidgets.QWidget):
@@ -944,14 +944,14 @@ class MultiCollectionExportDialog(QtWidgets.QDialog):
                 target_height = int(available.height() * height_ratio)
             else:
                 return
-        
+
         # Ensure we don't go below minimum size
         current_min = self.minimumSize()
         target_width = max(target_width, current_min.width())
         target_height = max(target_height, current_min.height())
-        
+
         self.resize(target_width, target_height)
-        
+
         layout = QtWidgets.QVBoxLayout(self)
 
         # Info label
@@ -1016,7 +1016,7 @@ class MultiCollectionExportDialog(QtWidgets.QDialog):
         button_layout.addWidget(close_btn)
 
         layout.addLayout(button_layout)
-    
+
     def _size_dialog_to_parent(self, width_ratio=0.7, height_ratio=0.7):
         """Size dialog relative to parent window or screen"""
         if self.parent() and isinstance(self.parent(), QtWidgets.QWidget):
@@ -1031,12 +1031,12 @@ class MultiCollectionExportDialog(QtWidgets.QDialog):
                 target_height = int(available.height() * height_ratio)
             else:
                 return
-        
+
         # Ensure we don't go below minimum size
         current_min = self.minimumSize()
         target_width = max(target_width, current_min.width())
         target_height = max(target_height, current_min.height())
-        
+
         self.resize(target_width, target_height)
 
     def _save_collection(self, role_name: str, collection_json: str):
@@ -1172,7 +1172,7 @@ class ImportDialog(QtWidgets.QDialog):
 
         # Store for multi-collection import
         self.imported_collections = {}
-    
+
     def _size_dialog_to_parent(self, width_ratio=0.7, height_ratio=0.7):
         """Size dialog relative to parent window or screen"""
         if self.parent() and isinstance(self.parent(), QtWidgets.QWidget):
@@ -1187,12 +1187,12 @@ class ImportDialog(QtWidgets.QDialog):
                 target_height = int(available.height() * height_ratio)
             else:
                 return
-        
+
         # Ensure we don't go below minimum size
         current_min = self.minimumSize()
         target_width = max(target_width, current_min.width())
         target_height = max(target_height, current_min.height())
-        
+
         self.resize(target_width, target_height)
 
     def _create_authmatrix_import_page(self):

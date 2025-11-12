@@ -1,6 +1,7 @@
 from typing import Dict, Any
 from PySide6 import QtWidgets, QtCore
 
+
 class ResultsSection(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -67,7 +68,7 @@ class ResultsSection(QtWidgets.QWidget):
                 cell = QtWidgets.QTableWidgetItem(text)
                 cell.setTextAlignment(QtCore.Qt.AlignCenter)
                 self.table.setItem(r, c, cell)
-    
+
     def update_result(self, endpoint_name: str, role: str, result: Dict[str, Any]):
         """Update a single result in the table (for streaming results)"""
         # Find the row for this endpoint
@@ -77,11 +78,11 @@ class ResultsSection(QtWidgets.QWidget):
             if item and item.text() == endpoint_name:
                 row = r
                 break
-        
+
         if row == -1:
             # Endpoint not found, this shouldn't happen
             return
-        
+
         # Find the column for this role
         col = -1
         for c in range(1, self.table.columnCount()):
@@ -89,11 +90,11 @@ class ResultsSection(QtWidgets.QWidget):
             if header and header.text() == role:
                 col = c
                 break
-        
+
         if col == -1:
             # Role not found, this shouldn't happen
             return
-        
+
         # Update the cell
         st = result.get("status", "")
         http = result.get("http", "")
@@ -102,7 +103,7 @@ class ResultsSection(QtWidgets.QWidget):
         lat = result.get("latency_ms")
         if isinstance(lat, int):
             text += f"  {lat}ms"
-        
+
         cell = QtWidgets.QTableWidgetItem(text)
         cell.setTextAlignment(QtCore.Qt.AlignCenter)
         self.table.setItem(row, col, cell)

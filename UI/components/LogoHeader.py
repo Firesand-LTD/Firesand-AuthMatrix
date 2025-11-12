@@ -23,7 +23,7 @@ class LogoHeader(QtWidgets.QWidget):
 
         # Load logo once and scale it to fixed size
         logo_pixmap = self._load_logo()
-        
+
         # --- UI ---
         self.logoLabel = QtWidgets.QLabel()
         self.logoLabel.setAlignment(QtCore.Qt.AlignCenter)
@@ -41,11 +41,11 @@ class LogoHeader(QtWidgets.QWidget):
         self.exportBtn = QtWidgets.QPushButton("Export")
         self.runBtn = QtWidgets.QPushButton("Run")
         self.runBtn.setDefault(True)
-        
+
         # Apply animation properties to buttons
         for btn in (self.importBtn, self.exportBtn, self.runBtn):
             apply_animation_properties(btn)
-        
+
         self.importBtn.clicked.connect(self.importRequested.emit)
         self.exportBtn.clicked.connect(self.exportRequested.emit)
         self.runBtn.clicked.connect(self._on_run_stop_clicked)
@@ -54,7 +54,7 @@ class LogoHeader(QtWidgets.QWidget):
         self.spinnerLabel = QtWidgets.QLabel()
         self.spinnerLabel.setFixedSize(16, 16)
         self.spinnerLabel.hide()
-        
+
         # Timer for spinner animation
         self._rotation_angle = 0
         self._spinner_timer = QtCore.QTimer(self)
@@ -63,13 +63,13 @@ class LogoHeader(QtWidgets.QWidget):
         left = QtWidgets.QHBoxLayout()
         left.addWidget(self.nameEdit)
         left.addStretch(1)
-        
+
         # Center logo
         center = QtWidgets.QHBoxLayout()
         center.addStretch(1)
         center.addWidget(self.logoLabel)
         center.addStretch(1)
-        
+
         # Right layout with spinner next to run button
         right = QtWidgets.QHBoxLayout()
         right.addStretch(1)
@@ -77,9 +77,9 @@ class LogoHeader(QtWidgets.QWidget):
         right.addWidget(self.exportBtn)
         right.addWidget(self.spinnerLabel)
         right.addWidget(self.runBtn)
-        
+
         layout = QtWidgets.QHBoxLayout(self)
-        layout.setContentsMargins(20, 0, 20, 0) ## Logo margins
+        layout.setContentsMargins(20, 0, 20, 0)  # Logo margins
         layout.addLayout(left, 1)
         layout.addLayout(center, 1)
         layout.addLayout(right, 1)
@@ -98,14 +98,14 @@ class LogoHeader(QtWidgets.QWidget):
 
         print("Logo not found in assets directory.")
         return QtGui.QPixmap()
-    
+
     def _on_run_stop_clicked(self):
         """Handle Run/Stop button click"""
         if self.is_running:
             self.stopRequested.emit()
         else:
             self.runRequested.emit()
-    
+
     def set_running_state(self, running: bool):
         """Set the button to Running (Stop) or Ready (Run) state"""
         self.is_running = running
@@ -117,29 +117,29 @@ class LogoHeader(QtWidgets.QWidget):
             self.runBtn.setText("Run")
             self.spinnerLabel.hide()
             self._spinner_timer.stop()
-    
+
     def _create_spinner_pixmap(self):
         """Create a small spinner pixmap with a circular arc"""
         size = 16
         pixmap = QtGui.QPixmap(size, size)
         pixmap.fill(QtCore.Qt.transparent)
-        
+
         painter = QtGui.QPainter(pixmap)
         painter.setRenderHint(QtGui.QPainter.Antialiasing)
-        
+
         # Draw circular arc for spinner
         pen = QtGui.QPen(QtGui.QColor("#007AFF"))  # Blue color
         pen.setWidth(2)
         pen.setCapStyle(QtCore.Qt.RoundCap)
         painter.setPen(pen)
-        
+
         # Draw arc (270 degrees, leaving 90 degree gap)
         rect = QtCore.QRectF(2, 2, size - 4, size - 4)
         painter.drawArc(rect, self._rotation_angle * 16, 270 * 16)
-        
+
         painter.end()
         return pixmap
-    
+
     def _update_spinner(self):
         """Update spinner rotation animation"""
         self._rotation_angle = (self._rotation_angle + 10) % 360
