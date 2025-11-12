@@ -8,12 +8,9 @@ These tests validate that the Auth Matrix application can:
 4. Process various HTTP status codes
 """
 
-import json
 import time
-import subprocess
 import sys
 import os
-from typing import Dict, Any
 import requests
 
 # Add parent directory to path to import the main module

@@ -115,8 +115,8 @@ Results are posted as PR comments with:
            ↓
 ┌─────────────────────────────────────┐
 │   Auth Matrix Tests                 │
-│   • 13 integration tests            │
-│   • 18 API unit tests               │
+│   • 15 integration tests            │
+│   • 17 API unit tests               │
 │   • Authorization matrix validation │
 └─────────────────────────────────────┘
 ```
@@ -134,8 +134,8 @@ Results are posted as PR comments with:
 ## Test Coverage
 
 - **API Endpoints**: 6 endpoints with varying auth levels
-- **Integration Tests**: 13 tests validating end-to-end flows
-- **Unit Tests**: 18 tests for API logic (no Docker)
+- **Integration Tests**: 15 tests validating end-to-end flows
+- **Unit Tests**: 17 tests for API logic (no Docker)
 - **Roles Tested**: Guest, User, Admin
 - **Status Codes**: 200 OK, 403 Forbidden, 401 Unauthorized, 404 Not Found
 
