@@ -1,6 +1,5 @@
 from __future__ import annotations
 import json, sys, time, multiprocessing, pickle, os
-from functools import partial
 from typing import Dict, Any, Optional, Callable, List
 import requests
 
@@ -86,17 +85,22 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__()
         self.setWindowTitle("Auth Matrix")
 
+
         # Set window icon
         self._set_window_icon()
+
 
         # Set minimum size for responsiveness
         self.setMinimumSize(700, 500)
 
+
         # Size window to fit available screen space
         self._size_to_screen()
 
+
         # Enable layout animations for smooth resizing
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground, False)
+
 
         # Center the window on the screen
         self._center_window()
@@ -142,6 +146,7 @@ class MainWindow(QtWidgets.QMainWindow):
         central_layout.setContentsMargins(0, 0, 0, 0)
         central_layout.setSpacing(0)
 
+
         # Create scrollable content area
         scroll_area = QtWidgets.QScrollArea()
         scroll_area.setWidgetResizable(True)
@@ -149,6 +154,7 @@ class MainWindow(QtWidgets.QMainWindow):
         scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         central_layout.addWidget(scroll_area)
+
 
         # Content widget inside scroll area
         content_widget = QtWidgets.QWidget()
@@ -161,6 +167,7 @@ class MainWindow(QtWidgets.QMainWindow):
         url_label = QtWidgets.QLabel("<b>Base URL</b>")
         url_label.setProperty("class", "title")
         vlayout.addWidget(url_label)
+
 
         self.baseUrlEdit = QtWidgets.QLineEdit()
         self.baseUrlEdit.setPlaceholderText("http://localhost:3000")
@@ -207,6 +214,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self._handle_responsive_layout()
         return super().eventFilter(obj, event)
 
+
     def _handle_responsive_layout(self):
         """Adjust layout based on window size for responsiveness."""
         # Responsive adjustments are primarily handled through:
@@ -223,15 +231,19 @@ class MainWindow(QtWidgets.QMainWindow):
             # Get available screen geometry (excludes taskbars, etc.)
             available = screen.availableGeometry()
 
+
             # Use 80% of available screen size, with reasonable max dimensions
             target_width = min(int(available.width() * 0.8), 1400)
             target_height = min(int(available.height() * 0.85), 900)
+
 
             # Ensure we don't go below minimum size
             target_width = max(target_width, 700)
             target_height = max(target_height, 500)
 
+
             self.resize(target_width, target_height)
+
 
     def _center_window(self):
         """Center the window on the primary screen"""
@@ -254,10 +266,12 @@ class MainWindow(QtWidgets.QMainWindow):
         import os
         from pathlib import Path
 
+
         # Try to find the icon file
         # Prefer .ico on Windows for better multi-size support
-        icon_extensions = ['.ico', '.png']
+        icon_extensions = [".ico", ".png"]
         icon_path = None
+
 
         for ext in icon_extensions:
             # When running from source
@@ -266,12 +280,14 @@ class MainWindow(QtWidgets.QMainWindow):
                 icon_path = candidate_path
                 break
 
+
             # When running from PyInstaller bundle
-            if hasattr(sys, '_MEIPASS'):
+            if hasattr(sys, "_MEIPASS"):
                 candidate_path = Path(sys._MEIPASS) / "UI" / "assets" / f"favicon{ext}"
                 if candidate_path.exists():
                     icon_path = candidate_path
                     break
+
 
         if icon_path:
             icon = QtGui.QIcon(str(icon_path))
@@ -519,6 +535,7 @@ class PostmanConfigDialog(QtWidgets.QDialog):
 
         layout = QtWidgets.QVBoxLayout(self)
 
+
     def _size_dialog_to_parent(self, width_ratio=0.7, height_ratio=0.7):
         """Size dialog relative to parent window or screen"""
         if self.parent() and isinstance(self.parent(), QtWidgets.QWidget):
@@ -534,12 +551,15 @@ class PostmanConfigDialog(QtWidgets.QDialog):
             else:
                 return
 
+
         # Ensure we don't go below minimum size
         current_min = self.minimumSize()
         target_width = max(target_width, current_min.width())
         target_height = max(target_height, current_min.height())
 
+
         self.resize(target_width, target_height)
+
 
         layout = QtWidgets.QVBoxLayout(self)
 
@@ -609,6 +629,7 @@ class PostmanConfigDialog(QtWidgets.QDialog):
 
         layout.addLayout(button_layout)
 
+
     def _size_dialog_to_parent(self, width_ratio=0.7, height_ratio=0.7):
         """Size dialog relative to parent window or screen"""
         if self.parent() and isinstance(self.parent(), QtWidgets.QWidget):
@@ -624,10 +645,12 @@ class PostmanConfigDialog(QtWidgets.QDialog):
             else:
                 return
 
+
         # Ensure we don't go below minimum size
         current_min = self.minimumSize()
         target_width = max(target_width, current_min.width())
         target_height = max(target_height, current_min.height())
+
 
         self.resize(target_width, target_height)
 
@@ -852,8 +875,8 @@ class ExportDialog(QtWidgets.QDialog):
         self.store = store
         self.setWindowTitle("Export Specification")
         self.setModal(True)
-        self.setMinimumSize(300, 180)
-        self.resize(400, 250)
+        self.setMinimumSize(300, 150)
+        self.resize(400, 200)
 
         layout = QtWidgets.QVBoxLayout(self)
 
@@ -863,19 +886,12 @@ class ExportDialog(QtWidgets.QDialog):
         # Export options
         authmatrix_btn = QtWidgets.QPushButton("Export as AuthMatrix Format")
         authmatrix_btn.setToolTip(
-            "Exports with #!AUTHMATRIX shebang and behavior logic"
+            "Exports with #!AUTHMATRIX shebang and behavior logic to a single file"
         )
         authmatrix_btn.clicked.connect(self._export_authmatrix)
         layout.addWidget(authmatrix_btn)
 
-        postman_btn = QtWidgets.QPushButton("Export as Postman Collection")
-        postman_btn.setToolTip("Exports as standard Postman collection JSON")
-        postman_btn.clicked.connect(self._export_postman)
-        layout.addWidget(postman_btn)
-
-        postman_multi_btn = QtWidgets.QPushButton(
-            "Export as Multiple Postman Collections"
-        )
+        postman_multi_btn = QtWidgets.QPushButton("Export as Postman Collections")
         postman_multi_btn.setToolTip(
             "Exports as separate Postman collections per role with role-specific auth"
         )
@@ -887,14 +903,31 @@ class ExportDialog(QtWidgets.QDialog):
         layout.addWidget(cancel_btn)
 
     def _export_authmatrix(self):
-        content = self.store.export_as_authmatrix()
-        show_text(self.parent(), "AuthMatrix Export", content)
-        self.accept()
+        """Export as AuthMatrix format to a file"""
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self,
+            "Export as AuthMatrix Format",
+            "authmatrix_spec.json",
+            "JSON Files (*.json);;All Files (*)",
+        )
 
-    def _export_postman(self):
-        content = self.store.export_as_postman()
-        show_text(self.parent(), "Postman Collection Export", content)
-        self.accept()
+        if not filename:
+            return
+
+        try:
+            content = self.store.export_as_authmatrix()
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(content)
+            QtWidgets.QMessageBox.information(
+                self,
+                "Export Successful",
+                f"AuthMatrix specification saved to:\n{filename}",
+            )
+            self.accept()
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(
+                self, "Export Error", f"Failed to save file:\n{str(e)}"
+            )
 
     def _export_postman_collections(self):
         """Export as multiple Postman collections, one per role"""
@@ -903,7 +936,7 @@ class ExportDialog(QtWidgets.QDialog):
         if not collections:
             QtWidgets.QMessageBox.information(
                 self,
-                "Export Multiple Collections",
+                "Export Postman Collections",
                 "No collections to export. Make sure you have configured role expectations for endpoints.",
             )
             return
@@ -1077,15 +1110,17 @@ class MultiCollectionExportDialog(QtWidgets.QDialog):
                         f.write(collection_json)
                     saved_files.append(filename)
 
-                QtWidgets.QMessageBox.information(
-                    self,
-                    "Success",
-                    f"Saved {len(saved_files)} collection(s) to {directory}",
-                )
-            except Exception as e:
-                QtWidgets.QMessageBox.critical(
-                    self, "Error", f"Failed to save collections: {str(e)}"
-                )
+            file_list = "\n".join([f"- {os.path.basename(f)}" for f in saved_files])
+            QtWidgets.QMessageBox.information(
+                self,
+                "Export Successful",
+                f"Saved {len(saved_files)} Postman collection(s) to:\n{directory}\n\nFiles:\n{file_list}",
+            )
+            self.accept()
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(
+                self, "Export Error", f"Failed to save collections:\n{str(e)}"
+            )
 
 
 class ImportDialog(QtWidgets.QDialog):
@@ -1097,7 +1132,7 @@ class ImportDialog(QtWidgets.QDialog):
         self.setWindowTitle("Import API Specification")
         self.setModal(True)
         self.setMinimumSize(500, 400)
-        self._size_dialog_to_parent(0.7, 0.7)
+        self.resize(600, 500)  # Set a fixed reasonable size instead of relative sizing
 
         layout = QtWidgets.QVBoxLayout(self)
 
@@ -1188,10 +1223,12 @@ class ImportDialog(QtWidgets.QDialog):
             else:
                 return
 
+
         # Ensure we don't go below minimum size
         current_min = self.minimumSize()
         target_width = max(target_width, current_min.width())
         target_height = max(target_height, current_min.height())
+
 
         self.resize(target_width, target_height)
 
@@ -1207,9 +1244,25 @@ class ImportDialog(QtWidgets.QDialog):
         info_label.setWordWrap(True)
         layout.addWidget(info_label)
 
+        # File browser button
+        file_btn = QtWidgets.QPushButton("📁 Import from File...")
+        file_btn.setMinimumHeight(40)
+        file_btn.clicked.connect(self._import_authmatrix_from_file)
+        layout.addWidget(file_btn)
+
+        # Optional text input (collapsible)
+        text_group = QtWidgets.QGroupBox("Or paste content here (optional)")
+        text_group.setCheckable(True)
+        text_group.setChecked(False)
+        text_layout = QtWidgets.QVBoxLayout(text_group)
+        
         self.authmatrix_text = QtWidgets.QTextEdit()
         self.authmatrix_text.setPlaceholderText("Paste AuthMatrix JSON content here...")
-        layout.addWidget(self.authmatrix_text)
+        self.authmatrix_text.setMaximumHeight(150)
+        text_layout.addWidget(self.authmatrix_text)
+        
+        layout.addWidget(text_group)
+        layout.addStretch()
 
         return page
 
@@ -1225,11 +1278,27 @@ class ImportDialog(QtWidgets.QDialog):
         info_label.setWordWrap(True)
         layout.addWidget(info_label)
 
+        # File browser button
+        file_btn = QtWidgets.QPushButton("📁 Import from File...")
+        file_btn.setMinimumHeight(40)
+        file_btn.clicked.connect(self._import_single_postman_from_file)
+        layout.addWidget(file_btn)
+
+        # Optional text input (collapsible)
+        text_group = QtWidgets.QGroupBox("Or paste content here (optional)")
+        text_group.setCheckable(True)
+        text_group.setChecked(False)
+        text_layout = QtWidgets.QVBoxLayout(text_group)
+        
         self.single_postman_text = QtWidgets.QTextEdit()
         self.single_postman_text.setPlaceholderText(
             "Paste Postman collection JSON content here..."
         )
-        layout.addWidget(self.single_postman_text)
+        self.single_postman_text.setMaximumHeight(150)
+        text_layout.addWidget(self.single_postman_text)
+        
+        layout.addWidget(text_group)
+        layout.addStretch()
 
         return page
 
@@ -1239,12 +1308,9 @@ class ImportDialog(QtWidgets.QDialog):
         layout = QtWidgets.QVBoxLayout(page)
 
         info_label = QtWidgets.QLabel(
-            "Import multiple Postman collections to automatically configure authorization patterns.\n\n"
-            "Example workflow:\n"
-            "• Import 'Admin.postman_collection.json' with admin endpoints\n"
-            "• Import 'User.postman_collection.json' with user endpoints\n"
-            "• Import 'Public.postman_collection.json' with public endpoints\n\n"
-            "The tool will automatically determine which roles can access which endpoints based on which collections they appear in."
+            "Import multiple Postman collections to automatically configure authorization patterns.\n"
+            "Import collections for different roles (e.g., Admin, User, Public) and the tool will "
+            "determine access patterns based on which collections contain which endpoints."
         )
         info_label.setWordWrap(True)
         layout.addWidget(info_label)
@@ -1278,7 +1344,7 @@ class ImportDialog(QtWidgets.QDialog):
         # Analysis preview
         self.analysis_text = QtWidgets.QTextEdit()
         self.analysis_text.setReadOnly(True)
-        self.analysis_text.setMaximumHeight(150)
+        self.analysis_text.setMaximumHeight(100)
         self.analysis_text.setPlaceholderText(
             "Authorization pattern analysis will appear here..."
         )
@@ -1568,6 +1634,74 @@ class ImportDialog(QtWidgets.QDialog):
         self.imported_collections.clear()
         self._update_collections_display()
 
+    def _import_authmatrix_from_file(self):
+        """Import AuthMatrix from file browser"""
+        file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self,
+            "Import AuthMatrix Specification",
+            "",
+            "JSON Files (*.json);;All Files (*)",
+        )
+
+        if not file_path:
+            return
+
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            if self.store.load_spec_from_content(content):
+                self.accept()
+            else:
+                QtWidgets.QMessageBox.critical(
+                    self, "Import Error", "Invalid AuthMatrix format"
+                )
+
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(
+                self, "Import Error", f"Failed to load file:\n{str(e)}"
+            )
+
+    def _import_single_postman_from_file(self):
+        """Import single Postman collection from file browser"""
+        file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self,
+            "Import Postman Collection",
+            "",
+            "JSON Files (*.json);;All Files (*)",
+        )
+
+        if not file_path:
+            return
+
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            if self.store.load_spec_from_content(content):
+                # Show configuration dialog for single import
+                if (
+                    self.store._original_postman_data
+                    and not self._has_configured_expectations()
+                ):
+                    dialog = PostmanConfigDialog(self.store, self)
+                    if dialog.exec() == QtWidgets.QDialog.Accepted:
+                        self.accept()
+                    else:
+                        # User cancelled configuration but import was successful
+                        self.accept()
+                else:
+                    self.accept()
+            else:
+                QtWidgets.QMessageBox.critical(
+                    self, "Import Error", "Invalid Postman collection format"
+                )
+
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(
+                self, "Import Error", f"Failed to load file:\n{str(e)}"
+            )
+
     def _handle_import(self):
         """Handle the import based on selected type"""
         if self.authmatrix_radio.isChecked():
@@ -1582,7 +1716,7 @@ class ImportDialog(QtWidgets.QDialog):
         content = self.authmatrix_text.toPlainText().strip()
         if not content:
             QtWidgets.QMessageBox.warning(
-                self, "No Content", "Please paste AuthMatrix content to import."
+                self, "No Content", "Please use 'Import from File' button or paste AuthMatrix content."
             )
             return
 
@@ -1598,7 +1732,7 @@ class ImportDialog(QtWidgets.QDialog):
         content = self.single_postman_text.toPlainText().strip()
         if not content:
             QtWidgets.QMessageBox.warning(
-                self, "No Content", "Please paste Postman collection content to import."
+                self, "No Content", "Please use 'Import from File' button or paste Postman collection content."
             )
             return
 
