@@ -16,18 +16,12 @@ jobs:
   integration-test:
     runs-on: ubuntu-latest
     
-    services:
-      # The test API will be started via docker-compose instead
-      # to have more control over the lifecycle
-      pass:
-        image: busybox
-        
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
     
     - name: Set up Python 3.12
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.12'
     
@@ -99,7 +93,7 @@ jobs:
     
     - name: Upload coverage to Codecov
       if: always()
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         file: ./coverage.xml
         flags: integration
@@ -166,7 +160,7 @@ jobs:
     
     - name: Upload test artifacts
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: integration-test-results
         path: |
