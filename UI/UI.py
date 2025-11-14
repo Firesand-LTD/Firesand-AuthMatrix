@@ -1132,8 +1132,7 @@ class ImportDialog(QtWidgets.QDialog):
         self.setWindowTitle("Import API Specification")
         self.setModal(True)
         self.setMinimumSize(500, 400)
-        self.resize(600, 500)  # Set a fixed reasonable size instead of relative sizing
-
+        
         layout = QtWidgets.QVBoxLayout(self)
 
         # Import type selection
@@ -1207,6 +1206,10 @@ class ImportDialog(QtWidgets.QDialog):
 
         # Store for multi-collection import
         self.imported_collections = {}
+        
+        # Size and center the dialog
+        self._size_dialog_to_parent(0.7, 0.7)
+        self._center_on_parent()
 
     def _size_dialog_to_parent(self, width_ratio=0.7, height_ratio=0.7):
         """Size dialog relative to parent window or screen"""
@@ -1231,6 +1234,15 @@ class ImportDialog(QtWidgets.QDialog):
 
 
         self.resize(target_width, target_height)
+
+    def _center_on_parent(self):
+        """Center the dialog on parent window"""
+        if self.parent() and isinstance(self.parent(), QtWidgets.QWidget):
+            parent_geometry = self.parent().geometry()
+            dialog_geometry = self.frameGeometry()
+            center_point = parent_geometry.center()
+            dialog_geometry.moveCenter(center_point)
+            self.move(dialog_geometry.topLeft())
 
     def _create_authmatrix_import_page(self):
         """Create the AuthMatrix import page"""
@@ -1991,6 +2003,38 @@ def start_ui(runner: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None
         pass
 
     app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
+    
+    # Set application icon for Windows taskbar
+    from pathlib import Path
+    icon_path = None
+    
+    # Try to find the icon file
+    icon_extensions = [".ico", ".png"]
+    for ext in icon_extensions:
+        # When running from source
+        candidate_path = Path(__file__).parent / "assets" / f"favicon{ext}"
+        if candidate_path.exists():
+            icon_path = candidate_path
+            break
+        
+        # When running from PyInstaller bundle
+        if hasattr(sys, "_MEIPASS"):
+            candidate_path = Path(sys._MEIPASS) / "UI" / "assets" / f"favicon{ext}"
+            if candidate_path.exists():
+                icon_path = candidate_path
+                break
+    
+    if icon_path:
+        app_icon = QtGui.QIcon(str(icon_path))
+        app.setWindowIcon(app_icon)
+        # On Windows, also set the app user model ID to ensure taskbar icon works
+        try:
+            import ctypes
+            app_id = 'Firesand.AuthMatrix.1.0'
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
+        except:
+            pass  # Not on Windows or API not available
+    
     mw = MainWindow(runner=runner)
     mw.show()
     app.exec()
