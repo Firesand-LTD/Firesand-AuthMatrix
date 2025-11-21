@@ -184,9 +184,17 @@ class TestApplicationIcon:
         # Find the start_ui function
         assert 'def start_ui(' in source, "start_ui function should exist"
         
-        # Check for icon-related code in start_ui function
-        assert 'Icon' in source or 'icon' in source, "start_ui should have icon-related code"
-        assert 'setWindowIcon' in source, "start_ui should call setWindowIcon"
+        # Extract just the start_ui function to avoid false positives
+        start_ui_start = source.find('def start_ui(')
+        start_ui_end = source.find('\ndef ', start_ui_start + 1)
+        if start_ui_end == -1:
+            start_ui_end = len(source)
+        start_ui_code = source[start_ui_start:start_ui_end]
+        
+        # Check for icon-related code specifically in start_ui function
+        assert 'QIcon' in start_ui_code or 'QtGui.QIcon' in start_ui_code, \
+               "start_ui should create QIcon instance"
+        assert 'setWindowIcon' in start_ui_code, "start_ui should call setWindowIcon"
     
     @pytest.mark.skipif(sys.platform != 'win32', reason="Windows-specific test")
     def test_start_ui_sets_windows_app_id(self):
