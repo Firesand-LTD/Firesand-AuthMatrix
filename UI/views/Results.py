@@ -1,6 +1,5 @@
 from typing import Dict, Any
 from PySide6 import QtWidgets, QtCore
-from ..components.SpinnerWidget import SpinnerWidget
 
 
 class ResultsSection(QtWidgets.QWidget):
@@ -27,7 +26,7 @@ class ResultsSection(QtWidgets.QWidget):
         layout.addWidget(self.table)
         
         # Track spinner widgets by (row, col) to manage their lifecycle
-        self._spinners: Dict[tuple, SpinnerWidget] = {}
+        self._spinners: Dict[tuple, QtWidgets.QWidget] = {}
 
     def render(self, results: Dict[str, Dict[str, Dict[str, Any]]]):
         # Reset model (clear removes headers, so we re-apply them below)
@@ -127,6 +126,9 @@ class ResultsSection(QtWidgets.QWidget):
     
     def _set_cell_spinner(self, row: int, col: int):
         """Set a spinner widget in the specified cell"""
+        # Lazy import to avoid circular dependency
+        from ..components.SpinnerWidget import SpinnerWidget
+        
         # Create a container widget to center the spinner
         container = QtWidgets.QWidget()
         layout = QtWidgets.QHBoxLayout(container)
