@@ -37,7 +37,7 @@ def format_result(result: Dict[str, Any]) -> str:
     st = result.get("status", "")
     
     if st == "⏳":
-        return "🔄 [SPINNER]"  # Would be animated spinner in UI
+        return "🔄 [SPINNER]"  # would be animated spinner in UI
     
     http = result.get("http", "")
     badge = "✅" if st == "PASS" else ("⏭️" if st == "SKIP" else "❌")

@@ -27,6 +27,9 @@ class ResultsSection(QtWidgets.QWidget):
         
         # Track spinner widgets by (row, col) to manage their lifecycle
         self._spinners: Dict[tuple, QtWidgets.QWidget] = {}
+        
+        # Cache for SpinnerWidget class (lazy loaded to avoid circular import)
+        self._SpinnerWidget = None
 
     def render(self, results: Dict[str, Dict[str, Dict[str, Any]]]):
         # Reset model (clear removes headers, so we re-apply them below)
@@ -126,8 +129,10 @@ class ResultsSection(QtWidgets.QWidget):
     
     def _set_cell_spinner(self, row: int, col: int):
         """Set a spinner widget in the specified cell"""
-        # Lazy import to avoid circular dependency
-        from ..components.SpinnerWidget import SpinnerWidget
+        # Lazy import to avoid circular dependency (only imported once)
+        if self._SpinnerWidget is None:
+            from ..components.SpinnerWidget import SpinnerWidget
+            self._SpinnerWidget = SpinnerWidget
         
         # Create a container widget to center the spinner
         container = QtWidgets.QWidget()
@@ -136,7 +141,7 @@ class ResultsSection(QtWidgets.QWidget):
         layout.setAlignment(QtCore.Qt.AlignCenter)
         
         # Create spinner
-        spinner = SpinnerWidget(size=16)
+        spinner = self._SpinnerWidget(size=16)
         spinner.start()
         layout.addWidget(spinner)
         
