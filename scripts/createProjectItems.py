@@ -2,7 +2,7 @@ import os
 import subprocess
 import json
 
-TODO_FILE = "../todo.txt"
+TODO_FILE = "todo.txt"
 LABEL = "agent-task"
 
 def get_open_issues():
