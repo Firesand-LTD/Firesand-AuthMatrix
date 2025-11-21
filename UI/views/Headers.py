@@ -79,7 +79,7 @@ class KVRow(QtWidgets.QWidget):
         reply = QtWidgets.QMessageBox.question(
             self,
             "Confirm Delete All",
-            f"Are you sure you want to delete all {len(headers)} header(s)?\n\nThis action cannot be undone.",
+            f"Are you sure you want to delete all {len(headers)} header(s)?\n\nThis will reset headers to the default Accept header only.",
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
             QtWidgets.QMessageBox.No,
         )
