@@ -82,7 +82,7 @@ class TestMultiCollectionExportDialogRendering:
                 break
 
         assert info_label is not None, "Dialog should have an info QLabel"
-        assert "1 Postman collection" in info_label.text(), "Info label should show collection count"
+        assert "Generated 1 Postman collection(s)" in info_label.text(), "Info label should show collection count"
 
     def test_dialog_has_buttons(self, qapp, qtbot):
         """Test that dialog has action buttons"""
