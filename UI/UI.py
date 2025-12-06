@@ -2,6 +2,7 @@ from __future__ import annotations
 import json, sys, time, multiprocessing, pickle, os
 from functools import partial
 from typing import Dict, Any, Optional, Callable, List
+from functools import partial
 import requests
 
 from PySide6 import QtCore, QtGui, QtWidgets
