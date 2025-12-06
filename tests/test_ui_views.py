@@ -93,6 +93,16 @@ class TestEndpointsSection:
             # Fallback case
             assert dialog.width() == 1200
             assert dialog.height() == 700
+        
+        # Verify table uses full width with proper column resize modes
+        table = dialog.endpoints_table
+        header = table.horizontalHeader()
+        
+        # Check that Path column (index 2) is set to Stretch mode
+        assert header.sectionResizeMode(2) == QtWidgets.QHeaderView.Stretch
+        
+        # Check that Configure column (index 3) is set to Fixed mode
+        assert header.sectionResizeMode(3) == QtWidgets.QHeaderView.Fixed
 
 
 class TestResultsSection:
